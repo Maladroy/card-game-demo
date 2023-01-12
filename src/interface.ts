@@ -5,3 +5,10 @@ export interface IEntity {
     hitPoints: number;
     effects: Array<() => void>;
 }
+
+export interface IEntities {
+    entities: {
+        player: IEntity[],
+        enemy: IEntity[]
+    }
+}

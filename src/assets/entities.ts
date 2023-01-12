@@ -7,6 +7,8 @@
 //     effects: []
 // }
 
+import { IEntity } from "../interface";
+
 // const dummy = {
 //     id: 2,
 //     name: 'dummy',
@@ -33,7 +35,7 @@ class Card {
     }
 }
 
-function generateRandomCard() {
+function generateRandomCard(): IEntity {
     return new Card(
         generateRandomString(10),
         names[Math.floor(Math.random() * names.length)],

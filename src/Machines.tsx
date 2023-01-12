@@ -1,9 +1,9 @@
 import { createMachine, assign } from "xstate";
 import { generateRandomCard } from "./assets/entities";
-import { IEntity } from "./interface";
+import { IEntity, IEntities } from "./interface";
 import _ from "lodash";
-const player: IEntity[] = [generateRandomCard()];
-const enemy: IEntity[] = [generateRandomCard(), generateRandomCard()];
+const player = [generateRandomCard()];
+const enemy = [generateRandomCard(), generateRandomCard()];
 
 const actionProcess = (cause: IEntity[], target: IEntity[]) => {
   // avoid object mutation with cloning
@@ -11,6 +11,7 @@ const actionProcess = (cause: IEntity[], target: IEntity[]) => {
   const cloneTarget = _.cloneDeep(target);
 
   cloneTarget[0].hitPoints -= cloneCause[0].attackPoints;
+  cloneTarget[0].hitPoints = Math.max(cloneTarget[0].hitPoints, 0);
 
   console.log(
     `${cause[0].name} deal ${cause[0].attackPoints} damage to ${target[0].name}!`
@@ -80,14 +81,14 @@ export default createMachine(
       GameEnd: {},
     },
     schema: {
-      context: {} as {},
+      context: {} as IEntities,
       events: {} as { type: "INPUT" } | { type: "NEXT" },
     },
   },
   {
     actions: {
       // action implementations
-      fightEnemy: assign(({ entities: { player, enemy } }: any) => {
+      fightEnemy: assign(({ entities: { player, enemy } }) => {
         const { cloneCause, cloneTarget } = actionProcess(player, enemy);
 
         return {
@@ -97,7 +98,7 @@ export default createMachine(
           },
         };
       }),
-      fightPlayer: assign(({ entities: { player, enemy } }: any) => {
+      fightPlayer: assign(({ entities: { player, enemy } }) => {
         const { cloneCause, cloneTarget } = actionProcess(enemy, player);
 
         return {
@@ -108,7 +109,7 @@ export default createMachine(
         };
       }),
       // filter out dead entities
-      eliminationCheck: assign(({ entities: { player, enemy } }: any) => {
+      eliminationCheck: assign(({ entities: { player, enemy } }) => {
         return {
           entities: {
             player: _.filter(player, ({ hitPoints }) => hitPoints > 0),
@@ -118,28 +119,26 @@ export default createMachine(
       }),
     },
     guards: {
-      didPlayerWin: ({ entities: { enemy } }: any) => {
+      didPlayerWin: ({ entities: { enemy } }) => {
         // check if player won
-        if (!enemy.length) {
-          console.log("Player won!");
-          return true;
-        }
-        return false;
+        if (enemy.length) return false;
+
+        console.log("Player won!");
+        return true;
       },
-      isPlayerAlive: ({ entities: { player } }: any) => {
+      isPlayerAlive: ({ entities: { player } }) => {
         // check if player alive
         // console.log(context.entities.player[0].hitPoints);
         return player[0].hitPoints > 0;
       },
-      didEnemyWin: ({ entities: { player } }: any) => {
+      didEnemyWin: ({ entities: { player } }) => {
         // check if enemy won
-        if (player.length === 0) {
-          console.log("Enemy won!");
-          return true;
-        }
-        return false;
+        if (player.length) return false;
+
+        console.log("Enemy won!");
+        return true;
       },
-      isEnemyAlive: ({ entities: { enemy } }: any) => {
+      isEnemyAlive: ({ entities: { enemy } }) => {
         // check if enemy alive
         // console.log(context.entities.enemy[0].hitPoints);
         return enemy[0].hitPoints > 0;
