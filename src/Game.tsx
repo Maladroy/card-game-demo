@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
 import { useMachine } from "@xstate/react";
 import gameMachine from "./Machines";
+import { interpret } from "xstate";
 import _ from "lodash";
-import { IEntity } from "./interface";
-import PlayerDeck from "./components/PlayerDeck";
-import EnemyDeck from "./components/EnemyDeck";
+import player from "./assets/entities/player";
 
+interface IEntity {
+  atk: number;
+  hp: number;
+  id: string;
+}
 
 function Game() {
   const [state, send] = useMachine(gameMachine);
-  const [playerEnityList, setPlayerEntityList] = useState<IEntity[]>([]);
-  const [enemyEnityList, setEnemyEntityList] = useState<IEntity[]>([]);
-
+  const [entityList, setEntities] = useState<IEntity[]>([]);
 
   // const service = interpret(gameMachine).onTransition((state) => {
   //   console.log(state.value);
@@ -20,29 +22,37 @@ function Game() {
   useEffect(() => {
     if (state.value != "Init") {
       if (
-        ["PlayerAction", "EnemyAction"].includes(
+        ["PlayerAction", "NPCAction"].includes(
           _.values(state.value)[0] as string
         )
       ) {
         setTimeout(() => send("NEXT"), 1000);
       }
     }
-    setPlayerEntityList(_.values(state.context.entities.player));
-    setEnemyEntityList(_.values(state.context.entities.enemy));
+    setEntities(_.values(state.context.entities));
   }, [state.value]);
 
   return (
-    <div className="mx-auto mt-16 w-3/4">
-        <div className="grid gap-[10rem] grid-cols-2 mb-12">
-          <PlayerDeck 
-            key="Player"
-            playerEnityList={playerEnityList}
-          />
-          <EnemyDeck 
-            key="Enemy"
-            enemyEnityList={enemyEnityList}
-          />
-        </div>
+    <div className="w-screen mx-auto mt-16 w-3/4">
+      <div id="wrapper" className=" grid grid-cols-2 justify-items-center">
+        {entityList &&
+          entityList.map((ntt) => {
+            if (ntt.hp >= 0)
+              return (
+                <div
+                  key={ntt.id}
+                  id={ntt.id}
+                  className={`${
+                    ntt.id == "player" ? "bg-blue-400" : "bg-red-400"
+                  } text-white w-1/4 h-[25vh]`}
+                >
+                  <p>ATK: {ntt.atk}</p>
+                  <p>HP: {ntt.hp}</p>
+                  <p className="text-center text-lg mt-2">{ntt.id}</p>
+                </div>
+              );
+          })}
+      </div>
       <button
         className="bg-yellow-500 block px-10 py-4 mt-10 mx-auto"
         onClick={() => {

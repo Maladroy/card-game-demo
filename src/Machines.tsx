@@ -1,24 +1,14 @@
 import { createMachine, assign } from "xstate";
-import { basic, dummy } from "./assets/entities";
-import { IEntity } from "./interface";
-
-const player = [basic];
-const enemy = [dummy, dummy];
-
-const actionProcess = (cause: IEntity[], target: IEntity[]) => {
-  target[0].hp -= cause[0].atk;
-
-  console.log(`${cause[0].name} deal ${cause[0].atk} damage to ${target[0].name}!`);
-}
-
-export default createMachine (
+import player from "./assets/entities/player";
+import npc from "./assets/entities/npc";
+export default createMachine(
   {
     predictableActionArguments: true,
     preserveActionOrder: true,
     id: "gameMachine",
     initial: "Init",
     context: {
-      entities: { player, enemy },
+      entities: { player, npc },
     },
     states: {
       Init: {
@@ -32,7 +22,7 @@ export default createMachine (
         initial: "PlayerAction",
         states: {
           PlayerAction: {
-            entry: ["fightEnemy"],
+            entry: ["fightNPC"],
             on: {
               NEXT: {
                 target: "PlayerActionProcess",
@@ -40,25 +30,23 @@ export default createMachine (
             },
           },
           PlayerActionProcess: {
-            entry: ["eliminationCheck"],
             always: [
               { target: "#gameMachine.GameEnd", cond: "didPlayerWin" },
-              { target: "EnemyAction", cond: "isPlayerAlive" },
+              { target: "NPCAction", cond: "isPlayerAlive" },
             ],
           },
-          EnemyAction: {
+          NPCAction: {
             entry: ["fightPlayer"],
             on: {
               NEXT: {
-                target: "EnemyActionProcess",
+                target: "NPCActionProcess",
               },
             },
           },
-          EnemyActionProcess: {
-            entry: ["eliminationCheck"],
+          NPCActionProcess: {
             always: [
-              { target: "#gameMachine.GameEnd", cond: "didEnemyWin" },
-              { target: "PlayerAction", cond: "isEnemyAlive" },
+              { target: "#gameMachine.GameEnd", cond: "didNPCWin" },
+              { target: "PlayerAction", cond: "isNPCAlive" },
             ],
           },
         },
@@ -73,23 +61,17 @@ export default createMachine (
   {
     actions: {
       // action implementations
-      fightEnemy: (context: any, event) => {
+      fightNPC: (context: any, event) => {
         let player = context.entities.player;
-        let enemy = context.entities.enemy;
-
-        actionProcess(player, enemy)
+        let npc = context.entities.npc;
+        npc.hp -= player.atk;
+        console.log(`Player deal ${player.atk} damage to NPC!`);
       },
       fightPlayer: (context, event) => {
         let player = context.entities.player;
-        let enemy = context.entities.enemy;
-
-        actionProcess(enemy, player)
-      },
-      // filter out dead entities
-      eliminationCheck: (context, event) => {
-        context.entities.player = context.entities.player.filter((entity: IEntity) => entity.hp > 0);
-        context.entities.enemy = context.entities.enemy.filter((entity: IEntity) => entity.hp > 0);
-        console.log('action ran')
+        let npc = context.entities.npc;
+        player.hp -= npc.atk;
+        console.log(`NPC deal ${npc.atk} to NPC!`);
       },
       logger: (context, event) => {
         console.log("state: ", context);
@@ -98,7 +80,7 @@ export default createMachine (
     guards: {
       didPlayerWin: (context, event) => {
         // check if player won
-        if (context.entities.enemy.length === 0) {
+        if (context.entities.npc.hp <= 0) {
           console.log("Player won!");
           return true;
         }
@@ -106,21 +88,19 @@ export default createMachine (
       },
       isPlayerAlive: (context, event) => {
         // check if player alive
-        console.log(context.entities.player[0].hp)
-        return context.entities.player[0].hp > 0;
+        return context.entities.player.hp > 0;
       },
-      didEnemyWin: (context, event) => {
-        // check if enemy won
-        if (context.entities.player.length === 0) {
-          console.log("Enemy won!");
+      didNPCWin: (context, event) => {
+        // check if npc won
+        if (context.entities.player.hp <= 0) {
+          console.log("NPC won!");
           return true;
         }
         return false;
       },
-      isEnemyAlive: (context, event) => {
-        // check if enemy alive
-        console.log(context.entities.enemy[0].hp)
-        return context.entities.enemy[0].hp > 0;
+      isNPCAlive: (context, event) => {
+        // check if npc alive
+        return context.entities.npc.hp > 0;
       },
     },
   }
