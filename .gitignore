@@ -6,6 +6,7 @@
 *.log
 /.vscode/
 /packages/vite/LICENSE
+dist
 dist-ssr
 explorations
 node_modules

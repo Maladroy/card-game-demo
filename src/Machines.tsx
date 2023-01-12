@@ -1,24 +1,32 @@
 import { createMachine, assign } from "xstate";
-import { basic, dummy } from "./assets/entities";
+import { generateRandomCard } from "./assets/entities";
 import { IEntity } from "./interface";
-
-const player = [basic];
-const enemy = [dummy, dummy];
+import _ from "lodash";
+const player: IEntity[] = [generateRandomCard()];
+const enemy: IEntity[] = [generateRandomCard(), generateRandomCard()];
 
 const actionProcess = (cause: IEntity[], target: IEntity[]) => {
-  target[0].hp -= cause[0].atk;
+  // avoid object mutation with cloning
+  const cloneCause = _.cloneDeep(cause);
+  const cloneTarget = _.cloneDeep(target);
 
-  console.log(`${cause[0].name} deal ${cause[0].atk} damage to ${target[0].name}!`);
-}
+  cloneTarget[0].hitPoints -= cloneCause[0].attackPoints;
 
-export default createMachine (
+  console.log(
+    `${cause[0].name} deal ${cause[0].attackPoints} damage to ${target[0].name}!`
+  );
+
+  return { cloneCause, cloneTarget };
+};
+
+export default createMachine(
   {
     predictableActionArguments: true,
     preserveActionOrder: true,
     id: "gameMachine",
     initial: "Init",
     context: {
-      entities: { player, enemy },
+      entities: { player, enemy }, // context must not be mutated externally but with assign()
     },
     states: {
       Init: {
@@ -33,6 +41,9 @@ export default createMachine (
         states: {
           PlayerAction: {
             entry: ["fightEnemy"],
+            after: {
+              1000: { target: "PlayerActionProcess" },
+            },
             on: {
               NEXT: {
                 target: "PlayerActionProcess",
@@ -48,6 +59,9 @@ export default createMachine (
           },
           EnemyAction: {
             entry: ["fightPlayer"],
+            after: {
+              1000: { target: "EnemyActionProcess" },
+            },
             on: {
               NEXT: {
                 target: "EnemyActionProcess",
@@ -73,54 +87,62 @@ export default createMachine (
   {
     actions: {
       // action implementations
-      fightEnemy: (context: any, event) => {
-        let player = context.entities.player;
-        let enemy = context.entities.enemy;
+      fightEnemy: assign(({ entities: { player, enemy } }: any) => {
+        const { cloneCause, cloneTarget } = actionProcess(player, enemy);
 
-        actionProcess(player, enemy)
-      },
-      fightPlayer: (context, event) => {
-        let player = context.entities.player;
-        let enemy = context.entities.enemy;
+        return {
+          entities: {
+            player: cloneCause,
+            enemy: cloneTarget,
+          },
+        };
+      }),
+      fightPlayer: assign(({ entities: { player, enemy } }: any) => {
+        const { cloneCause, cloneTarget } = actionProcess(enemy, player);
 
-        actionProcess(enemy, player)
-      },
+        return {
+          entities: {
+            player: cloneTarget,
+            enemy: cloneCause,
+          },
+        };
+      }),
       // filter out dead entities
-      eliminationCheck: (context, event) => {
-        context.entities.player = context.entities.player.filter((entity: IEntity) => entity.hp > 0);
-        context.entities.enemy = context.entities.enemy.filter((entity: IEntity) => entity.hp > 0);
-        console.log('action ran')
-      },
-      logger: (context, event) => {
-        console.log("state: ", context);
-      },
+      eliminationCheck: assign(({ entities: { player, enemy } }: any) => {
+        return {
+          entities: {
+            player: _.filter(player, ({ hitPoints }) => hitPoints > 0),
+            enemy: _.filter(enemy, ({ hitPoints }) => hitPoints > 0),
+          },
+        };
+      }),
     },
     guards: {
-      didPlayerWin: (context, event) => {
+      didPlayerWin: ({ entities: { enemy } }: any) => {
         // check if player won
-        if (context.entities.enemy.length === 0) {
+        if (!enemy.length) {
           console.log("Player won!");
           return true;
         }
         return false;
       },
-      isPlayerAlive: (context, event) => {
+      isPlayerAlive: ({ entities: { player } }: any) => {
         // check if player alive
-        console.log(context.entities.player[0].hp)
-        return context.entities.player[0].hp > 0;
+        // console.log(context.entities.player[0].hitPoints);
+        return player[0].hitPoints > 0;
       },
-      didEnemyWin: (context, event) => {
+      didEnemyWin: ({ entities: { player } }: any) => {
         // check if enemy won
-        if (context.entities.player.length === 0) {
+        if (player.length === 0) {
           console.log("Enemy won!");
           return true;
         }
         return false;
       },
-      isEnemyAlive: (context, event) => {
+      isEnemyAlive: ({ entities: { enemy } }: any) => {
         // check if enemy alive
-        console.log(context.entities.enemy[0].hp)
-        return context.entities.enemy[0].hp > 0;
+        // console.log(context.entities.enemy[0].hitPoints);
+        return enemy[0].hitPoints > 0;
       },
     },
   }

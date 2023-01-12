@@ -1,15 +1,15 @@
 import { IEntity } from "../interface";
 import EntityCard from "./EntityCard";
 
-const EnemyDeck = ({ enemyEnityList }: { enemyEnityList: IEntity[]}) => {
+const EnemyDeck = ({ enemyEntityList }: { enemyEntityList: IEntity[]}) => {
     return (
         <div className="flex gap-8">
-            {enemyEnityList.map((e: IEntity, index) => (
+            {enemyEntityList.map((e: IEntity, index) => (
                 <EntityCard
                     key={index}
                     name={e.name}
-                    atk={e.atk}
-                    hp={e.hp}
+                    attackPoints={e.attackPoints}
+                    hitPoints={e.hitPoints}
                     type='enemy'
                 />
             ))}
