@@ -1,22 +1,4 @@
-
-// const basic = {
-//     id: 1,
-//     name: 'basic',
-//     attackPoints: 2,
-//     hitPoints: 5,
-//     effects: []
-// }
-
 import { IEntity } from "../interface";
-
-// const dummy = {
-//     id: 2,
-//     name: 'dummy',
-//     attackPoints: 1,
-//     hitPoints: 5,
-//     effects: []
-
-// }
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
 class Card {

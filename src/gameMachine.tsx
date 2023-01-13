@@ -2,8 +2,17 @@ import { createMachine, assign } from "xstate";
 import { generateRandomCard } from "./assets/entities";
 import { IEntity, IEntities } from "./interface";
 import _ from "lodash";
-const player = [generateRandomCard()];
-const enemy = [generateRandomCard(), generateRandomCard()];
+
+const generateDeck = (num: number) => {
+  let deck = []
+  while ( deck.length < num ) {
+    deck.push(generateRandomCard())
+  }
+  return deck
+}
+
+const player = generateDeck(3);
+const enemy = generateDeck(3);
 
 const actionProcess = (cause: IEntity[], target: IEntity[]) => {
   // avoid object mutation with cloning
@@ -31,6 +40,7 @@ export default createMachine(
     },
     states: {
       Init: {
+        entry: ["initializeMatch"],
         on: {
           INPUT: {
             target: "GameStart",
@@ -42,9 +52,9 @@ export default createMachine(
         states: {
           PlayerAction: {
             entry: ["fightEnemy"],
-            after: {
-              1000: { target: "PlayerActionProcess" },
-            },
+            // after: {
+            //   1000: { target: "PlayerActionProcess" },
+            // },
             on: {
               NEXT: {
                 target: "PlayerActionProcess",
@@ -55,14 +65,19 @@ export default createMachine(
             entry: ["eliminationCheck"],
             always: [
               { target: "#gameMachine.GameEnd", cond: "didPlayerWin" },
-              { target: "EnemyAction", cond: "isPlayerAlive" },
+              // { target: "EnemyAction", cond: "isPlayerAlive" },
             ],
+            on: {
+              NEXT: {
+                target: "EnemyAction",
+              },
+            },
           },
           EnemyAction: {
             entry: ["fightPlayer"],
-            after: {
-              1000: { target: "EnemyActionProcess" },
-            },
+            // after: {
+            //   1000: { target: "EnemyActionProcess" },
+            // },
             on: {
               NEXT: {
                 target: "EnemyActionProcess",
@@ -73,12 +88,26 @@ export default createMachine(
             entry: ["eliminationCheck"],
             always: [
               { target: "#gameMachine.GameEnd", cond: "didEnemyWin" },
-              { target: "PlayerAction", cond: "isEnemyAlive" },
+              // { target: "PlayerAction", cond: "isEnemyAlive" },
             ],
+            on: {
+              NEXT: {
+                target: "PlayerAction",
+              },
+            },
           },
         },
+        on: {
+          INPUT: {
+            target: "GameEnd"
+          }
+        },
       },
-      GameEnd: {},
+      GameEnd: {
+        after: {
+          1000: { target: "Init"}
+        }
+      },
     },
     schema: {
       context: {} as IEntities,
@@ -88,6 +117,14 @@ export default createMachine(
   {
     actions: {
       // action implementations
+      initializeMatch: assign(() => {
+        return {
+          entities: {
+            player: generateDeck(3),
+            enemy: generateDeck(3),
+          }
+        }
+      }),
       fightEnemy: assign(({ entities: { player, enemy } }) => {
         const { cloneCause, cloneTarget } = actionProcess(player, enemy);
 
@@ -117,6 +154,9 @@ export default createMachine(
           },
         };
       }),
+      reset: () => {
+
+      }
     },
     guards: {
       didPlayerWin: ({ entities: { enemy } }) => {
