@@ -1,18 +1,15 @@
 import { createMachine, assign } from "xstate";
-import { generateRandomCard } from "./assets/entities";
+import { generateRandomCard, villager } from "./assets/entities";
 import { IEntity, IEntities } from "./interface";
 import _ from "lodash";
 
-const generateDeck = (num: number) => {
-  let deck = []
+const generateDeck = (num: number, ...entities: IEntity[]) => {
+  let deck = entities.map(e => _.cloneDeep(e))
   while ( deck.length < num ) {
     deck.push(generateRandomCard())
   }
   return deck
 }
-
-const player = generateDeck(3);
-const enemy = generateDeck(3);
 
 const actionProcess = (cause: IEntity[], target: IEntity[]) => {
   // avoid object mutation with cloning
@@ -23,11 +20,22 @@ const actionProcess = (cause: IEntity[], target: IEntity[]) => {
   cloneTarget[0].hitPoints = Math.max(cloneTarget[0].hitPoints, 0);
 
   console.log(
-    `${cause[0].name} deal ${cause[0].attackPoints} damage to ${target[0].name}!`
+    `${cloneCause[0].name} deal ${cloneCause[0].attackPoints} damage to ${cloneTarget[0].name}!`
   );
 
   return { cloneCause, cloneTarget };
 };
+
+// trigger effects of cards in deck
+const effectProcess = (deck: IEntity[]) => {
+  deck.forEach(card => {
+    card.effects.forEach(func => {
+      const processor = func();
+      deck = processor(deck)
+    })
+  })
+  return deck
+}
 
 export default createMachine(
   {
@@ -36,7 +44,7 @@ export default createMachine(
     id: "gameMachine",
     initial: "Init",
     context: {
-      entities: { player, enemy }, // context must not be mutated externally but with assign()
+      entities: { player: [], enemy: [] }, // context must not be mutated externally but with assign()
     },
     states: {
       Init: {
@@ -48,6 +56,7 @@ export default createMachine(
         },
       },
       GameStart: {
+        entry: ["processPreCombat"],
         initial: "PlayerAction",
         states: {
           PlayerAction: {
@@ -120,9 +129,20 @@ export default createMachine(
       initializeMatch: assign(() => {
         return {
           entities: {
-            player: generateDeck(3),
+            player: generateDeck(3, villager,villager,villager),
             enemy: generateDeck(3),
           }
+        }
+      }),
+      processPreCombat: assign(({ entities: { player, enemy }}) => {
+        const clonePlayer = effectProcess(player)
+        const cloneEnemy = effectProcess(enemy)
+        
+        return {
+          entities: {
+            player: clonePlayer,
+            enemy: cloneEnemy,
+          },
         }
       }),
       fightEnemy: assign(({ entities: { player, enemy } }) => {

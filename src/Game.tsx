@@ -34,27 +34,32 @@ function Game() {
   }, [state.value, timelinePaused]);
 
   return (
-    <div className="mx-auto mt-16 w-3/4">
-      <div className="grid gap-[10rem] grid-cols-2 mb-12">
-        <PlayerDeck key="Player" playerEntityList={playerEntityList} />
-        <EnemyDeck key="Enemy" enemyEntityList={enemyEntityList} />
+    <div className="">
+      <div className="mx-auto mt-16 w-full xl:w-3/4 mb-8">
+        <div className="grid gap-[10rem] grid-cols-2 mb-12">
+          <PlayerDeck key="Player" playerEntityList={playerEntityList} />
+          <EnemyDeck key="Enemy" enemyEntityList={enemyEntityList} />
+        </div>
+        <div className="flex gap-6 justify-center">
+          <button
+            className="bg-yellow-500 block px-10 py-4 mt-10"
+            onClick={() => {
+              send("INPUT");
+            }}
+          >
+            {state.value === "Init" ? "Start" : "Restart"}
+          </button>
+        { state.value != "Init" && (
+          <button
+            className="bg-yellow-500 block px-10 py-4 mt-10"
+            onClick={toggleTimeline}
+          >
+            {timelinePaused ? "Resume" : "Pause"}
+          </button>
+        )}
+        </div>
       </div>
-      <div className="flex gap-6 justify-center">
-        <button
-          className="bg-yellow-500 block px-10 py-4 mt-10"
-          onClick={() => {
-            send("INPUT");
-          }}
-        >
-          {state.value === "Init" ? "Start" : "Restart"}
-        </button>
-        <button
-        className="bg-yellow-500 block px-10 py-4 mt-10"
-        onClick={toggleTimeline}
-      >
-        {timelinePaused &&  state.value != "Init" ? "Resume" : "Pause"}
-      </button>
-      </div>
+      <div className="bg-neutral-700 w-screen h-[24rem]"></div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 export interface IEntity {
-    id: string;
+    cardId: string;
     name: string;
     attackPoints: number;
     hitPoints: number;
-    effects: Array<() => void>;
+    types: string[];
+    effects: Array<() => any>;
 }
 
 export interface IEntities {
