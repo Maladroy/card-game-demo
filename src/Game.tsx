@@ -13,20 +13,28 @@ function Game() {
   const [timelinePaused, setTimelinePaused] = useState(false);
 
   const toggleTimeline = () => {
+    send("PREVIOUS");
     setTimelinePaused(preState => !preState)
   }
 
+  const resetTimeLIne = () => {
+    setTimelinePaused(false)
+  }
+
+
   // render after every state changes
   useEffect(() => {
-    if (!timelinePaused && state.value != "Init") {
-      if (
-        ["PlayerAction", "EnemyAction","PlayerActionProcess","EnemyActionProcess"].includes(
-          _.values(state.value)[0] as string
-        )
-      ) {
-        setTimeout(() => send("NEXT"), 1000);
-      }
-    }
+    // if (!timelinePaused && state.value != "Init") {
+    //   if (
+    //     ["PlayerAction", "EnemyAction","PlayerActionProcess","EnemyActionProcess"].includes(
+    //       _.values(state.value)[0] as string
+    //     )
+    //   ) {
+    //     setTimeout(() => send("NEXT"), 1000);
+    //   }
+    // }
+    // console.log(state.value)
+
     //@ts-ignore
     setPlayerEntityList(_.values(state.context.entities.player).reverse());
     //@ts-ignore
@@ -45,6 +53,7 @@ function Game() {
             className="bg-yellow-500 block px-10 py-4 mt-10"
             onClick={() => {
               send("INPUT");
+              resetTimeLIne()
             }}
           >
             {state.value === "Init" ? "Start" : "Restart"}

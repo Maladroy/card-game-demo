@@ -8,15 +8,16 @@ class Card {
     attackPoints: number;
     hitPoints: number;
     types: string[];
-    effects: Array<() => any>;
+    effects: { effect: () => any, requiresOwn: boolean, event: string, type: string }
 
-    constructor(cardId: string, name: string, attackPoints: number, hitPoints: number, types: string[], effects: Array<() => any>) {
-        this.cardId = cardId;
-        this.name = name;
-        this.attackPoints = attackPoints;
-        this.hitPoints = hitPoints;
-        this.types = types;
-        this.effects = effects;
+    constructor(cardId: string, name: string, attackPoints: number, hitPoints: number, types: string[], 
+        effects: { effect: () => any, requiresOwn: boolean, event: string, type: string }) {
+            this.cardId = cardId;
+            this.name = name;
+            this.attackPoints = attackPoints;
+            this.hitPoints = hitPoints;
+            this.types = types;
+            this.effects = effects;
     }
 }
 
@@ -27,18 +28,26 @@ function generateRandomCard(): IEntity {
         Math.floor(Math.random() * 6) + 1,
         Math.floor(Math.random() * 6) + 1,
         ["human"],
-        [])
+        { effect: () => null, requiresOwn: false, event: '', type: ''},
+    )
 }
 
 const generateRandomString = (length = 5) => Math.random().toString(20).substring(2, length)
 
+
+
 const villager = new Card(
     "001",
     "Villager",
-    5,
-    5,
-    ["human"],
-    [() => increaseHPToTypes(1, ["human"])]
+    1,
+    2,
+    ["human"], 
+    {   
+        effect: () => increaseHPToTypes(1, ["human"]),
+        requiresOwn: true,
+        event: "onSpawn",
+        type: "buff",
+    },
 )
 
 export { generateRandomCard, villager }
