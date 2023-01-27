@@ -1,17 +1,17 @@
 import { IEntity } from "../interface";
-import { increaseHPToTypes } from "./effects";
+import { extraAttack, increaseHPToTypes, reflectAttacker, spawnAlly } from "./effects";
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
-class Card {
+export class Card {
     cardId: string;
     name: string;
     attackPoints: number;
     hitPoints: number;
     types: string[];
-    effects: { effect: () => any, requiresOwn: boolean, event: string, type: string }
+    effects: { effect: () => any, requirements: string[], event: string, type: string }
 
     constructor(cardId: string, name: string, attackPoints: number, hitPoints: number, types: string[], 
-        effects: { effect: () => any, requiresOwn: boolean, event: string, type: string }) {
+        effects: { effect: () => any, requirements: string[], event: string, type: string }) {
             this.cardId = cardId;
             this.name = name;
             this.attackPoints = attackPoints;
@@ -28,7 +28,7 @@ function generateRandomCard(): IEntity {
         Math.floor(Math.random() * 6) + 1,
         Math.floor(Math.random() * 6) + 1,
         ["human"],
-        { effect: () => null, requiresOwn: false, event: '', type: ''},
+        { effect: () => null, requirements: [], event: '', type: ''},
     )
 }
 
@@ -44,10 +44,52 @@ const villager = new Card(
     ["human"], 
     {   
         effect: () => increaseHPToTypes(1, ["human"]),
-        requiresOwn: true,
+        requirements: ["own"],
         event: "onSpawn",
         type: "buff",
     },
+);
+
+const hunter = new Card(
+    "002",
+    "Hunter",
+    3,
+    2,
+    ["human"],
+    {
+        effect: () => extraAttack(2, 1),
+        requirements: ["opp","latestTargets"],
+        event: "onAttack",
+        type: "attack"
+    }
+);
+
+const largeTree = new Card(
+    "003",
+    "Large Tree",
+    0,
+    11,
+    ["nature"],
+    {
+        effect: () => reflectAttacker(1, 0.2, 1),
+        requirements: ["opp","latestTargets"],
+        event: "onHit",
+        type: "attack"
+    }
+);
+
+const landlord = new Card(
+    "004",
+    "Landlord",
+    1,
+    3,
+    ["human"],
+    {
+        effect: () => spawnAlly(villager, 0.35),
+        requirements: ["own"],
+        event: "onEliminated",
+        type: "spawn"
+    }
 )
 
-export { generateRandomCard, villager }
+export { generateRandomCard, villager, hunter, largeTree, landlord }

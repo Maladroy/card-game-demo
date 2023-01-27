@@ -4,7 +4,7 @@ export interface IEntity {
     attackPoints: number;
     hitPoints: number;
     types: string[];
-    effects: { effect: () => any, requiresOwn: boolean, event: string, type: string };
+    effects: { effect: () => any, requirements: string[], event: string, type: string };
 }
 
 export interface IContext {
@@ -27,7 +27,7 @@ export interface IContext {
 export interface IEffect {
     card: IEntity,  
     side: string,
-    requiresOwn: boolean,
+    requirements: string[],
 }
 
 export interface IPosition {

@@ -36,7 +36,7 @@ function Game() {
     // console.log(state.value)
 
     //@ts-ignore
-    setPlayerEntityList(_.values(state.context.entities.player).reverse());
+    setPlayerEntityList(_.values(state.context.entities.player));
     //@ts-ignore
     setEnemyEntityList(_.values(state.context.entities.enemy));
   }, [state.value, timelinePaused]);
@@ -44,7 +44,7 @@ function Game() {
   return (
     <div className="">
       <div className="mx-auto mt-16 w-full xl:w-3/4 mb-8">
-        <div className="grid gap-[10rem] grid-cols-2 mb-12">
+        <div className="grid gap-4 xl:gap-[10rem] grid-cols-2 mb-12">
           <PlayerDeck key="Player" playerEntityList={playerEntityList} />
           <EnemyDeck key="Enemy" enemyEntityList={enemyEntityList} />
         </div>
@@ -68,7 +68,7 @@ function Game() {
         )}
         </div>
       </div>
-      <div className="bg-neutral-700 w-screen h-[24rem]"></div>
+      <div className="bg-neutral-700 w-full h-[24rem]"></div>
     </div>
   );
 }
