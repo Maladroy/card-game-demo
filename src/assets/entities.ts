@@ -1,5 +1,5 @@
 import { IEntity } from "../interface";
-import { extraAttack, increaseHPToTypes, reflectAttacker, spawnAlly } from "./effects";
+import { doNothing, doubleAttack, extraAttack, increaseHPToTypes, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
 export class Card {
@@ -40,7 +40,7 @@ const villager = new Card(
     "001",
     "Villager",
     1,
-    2,
+    5,
     ["human"], 
     {   
         effect: () => increaseHPToTypes(1, ["human"]),
@@ -54,7 +54,7 @@ const hunter = new Card(
     "002",
     "Hunter",
     3,
-    2,
+    5,
     ["human"],
     {
         effect: () => extraAttack(2, 1),
@@ -82,7 +82,7 @@ const landlord = new Card(
     "004",
     "Landlord",
     1,
-    3,
+    4,
     ["human"],
     {
         effect: () => spawnAlly(villager, 0.35),
@@ -90,6 +90,76 @@ const landlord = new Card(
         event: "onEliminated",
         type: "spawn"
     }
+);
+
+const assassin = new Card(
+    "005",
+    "Assassin",
+    4,
+    4,
+    ["human"],
+    {
+        effect: () => swapPositionSelf(1),
+        requirements: ["own"],
+        event: "onEliminating",
+        type: "swap"
+    }
+);
+
+const imp = new Card(
+    "006",
+    "Imp",
+    2,
+    2,
+    ["demon"],
+    {
+        effect: () => swapPositionSingleEnemy(2, 0),
+        requirements: ["opp"],
+        event: "onHit",
+        type: "swap"
+    }
+);
+
+const fiend = new Card(
+    "007",
+    "Fiend",
+    2,
+    8,
+    ["demon"],
+    {
+        effect: () => doubleAttack(1, 2),
+        requirements: ["opp"],
+        event: "onAttack",
+        type: "attack"
+    }
+);
+
+const devil = new Card(
+    "008",
+    "Devil",
+    5,
+    6,
+    ["demon"],
+    {
+        effect: () => spawnAlly(imp, 0),
+        requirements: ["own"],
+        event: "onEliminating",
+        type: "spawn"
+    }
+);
+
+const hellhound = new Card(
+    "009",
+    "Hellhound",
+    8,
+    10,
+    ["demon"],
+    {
+        effect: () => doNothing(),
+        requirements: ["own"],
+        event: "onSpawn",
+        type: "buff"
+    }
 )
 
-export { generateRandomCard, villager, hunter, largeTree, landlord }
+export { generateRandomCard, villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound }

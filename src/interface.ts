@@ -25,7 +25,8 @@ export interface IContext {
 }
 
 export interface IEffect {
-    card: IEntity,  
+    card: IEntity,
+    index: number,
     side: string,
     requirements: string[],
 }
