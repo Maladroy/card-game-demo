@@ -5,41 +5,21 @@ import _ from "lodash";
 import { IEntity } from "./interface";
 import PlayerDeck from "./components/PlayerDeck";
 import EnemyDeck from "./components/EnemyDeck";
+import { cardList } from "./assets/entities";
+import InventoryCard from "./components/InventoryCard";
 
 function Game() {
   const [state, send] = useMachine(gameMachine);
   const [playerEntityList, setPlayerEntityList] = useState<IEntity[]>([]);
   const [enemyEntityList, setEnemyEntityList] = useState<IEntity[]>([]);
-  const [timelinePaused, setTimelinePaused] = useState(false);
-
-  const toggleTimeline = () => {
-    send("PREVIOUS");
-    setTimelinePaused(preState => !preState)
-  }
-
-  const resetTimeLIne = () => {
-    setTimelinePaused(false)
-  }
-
 
   // render after every state changes
   useEffect(() => {
-    // if (!timelinePaused && state.value != "Init") {
-    //   if (
-    //     ["PlayerAction", "EnemyAction","PlayerActionProcess","EnemyActionProcess"].includes(
-    //       _.values(state.value)[0] as string
-    //     )
-    //   ) {
-    //     setTimeout(() => send("NEXT"), 1000);
-    //   }
-    // }
-    // console.log(state.value)
-
     //@ts-ignore
     setPlayerEntityList(_.values(state.context.entities.player));
     //@ts-ignore
     setEnemyEntityList(_.values(state.context.entities.enemy));
-  }, [state.value, timelinePaused]);
+  }, [state.value]);
 
   return (
     <div className="">
@@ -53,24 +33,24 @@ function Game() {
             className="bg-yellow-500 block px-10 py-4 mt-10"
             onClick={() => {
               send("INPUT");
-              resetTimeLIne()
             }}
           >
             {state.value === "Init" ? "Start" : "Restart"}
           </button>
-        { state.value != "Init" && (
-          <button
-            className="bg-yellow-500 block px-10 py-4 mt-10"
-            onClick={toggleTimeline}
-          >
-            {timelinePaused ? "Resume" : "Pause"}
-          </button>
-        )}
         </div>
       </div>
-      <div className="bg-neutral-700 w-full h-[24rem]"></div>
+      <div className="bg-neutral-700 w-full h-[24rem] p-6 flex gap-8 flex-wrap">
+        {cardList.map(card => 
+          <InventoryCard
+            key={card.cardId}
+            name={card.name}
+            attackPoints={card.attackPoints}
+            hitPoints={card.hitPoints}
+          />  
+        )}
+      </div>
     </div>
   );
 }
 
-export default Game;
+export { Game };

@@ -1,13 +1,12 @@
 import { createMachine, assign } from "xstate";
-import { generateRandomCard, villager, hunter, largeTree, landlord, assassin, fiend, devil, imp, hellhound } from "./assets/entities";
+import { generateRandomCard, villager, hunter, largeTree, landlord, assassin, fiend, devil, imp, hellhound, hellreaper, swordman, archer, cavalry, shielder, spearman } from "./assets/entities";
 import { IEntity, IContext, IEffect } from "./interface";
 import Target from "./assets/targets";
 import { Effect } from "./assets/effects";
 import _ from "lodash";
 
-
 // generate new deck every restart
-const generateDeck = (num: number, ...entities: IEntity[]) => {
+const generateDeck = (num: number, entities: IEntity[]) => {
   let deck = entities.map(e => _.cloneDeep(e))
   while ( deck.length < num ) {
     deck.push(generateRandomCard())
@@ -39,7 +38,7 @@ const processEffect = (effect: IEffect, ownDeck: IEntity[], oppDeck: IEntity[], 
     if (effect.card.effects.requirements[i] === "own") {
       ownDeck = processor[i](ownDeck, effect.index)
     } else if (effect.card.effects.requirements[i] === "opp") {
-      oppDeck = processor[i](oppDeck)
+      oppDeck = processor[i](oppDeck, effect.index)
     } else if (effect.card.effects.requirements[i] === "latestTargets"){
       newTargets = processor[i](oppDeck, targetsSide)
     }
@@ -120,22 +119,44 @@ export default createMachine(
             ],
           },
           PlayerAction: {
-            entry: ["fightEnemy"],
-            always: [
-              { target: "ProcessEffects", actions: ["queueOnAttackEffect"], cond: "cardHasOnAttack" }
-            ],
-            after: {
-              1000: { target: "HitRegister"}
-            },
+            initial: "autoAttack",
+            states: {
+              autoAttack: {
+                entry: ["fightEnemy"],
+                always: [
+                  { target: "postAttack", actions: ["queueOnAllyAttack"], cond: "deckHasOnAllyAttack" },
+                  { target: "postAttack" }
+                ],
+              },
+              postAttack: {
+                always: [
+                  { target: "#gameMachine.GameStart.ProcessEffects", actions: ["queueOnAttackEffect"], cond: "cardHasOnAttack" },
+                ],
+                after: {
+                  1000: { target: "#gameMachine.GameStart.HitRegister"}
+                },
+              }
+            }
           },
           EnemyAction: {
-            entry: ["fightPlayer"],
-            always: [
-              { target: "ProcessEffects", actions: ["queueOnAttackEffect"], cond: "cardHasOnAttack"}
-            ],
-            after: {
-              1000: { target: "HitRegister" }
-            },
+            initial: "autoAttack",
+            states: {
+              autoAttack: {
+                entry: ["fightPlayer"],
+                always: [
+                  { target: "postAttack", actions: ["queueOnAllyAttack"], cond: "deckHasOnAllyAttack" },
+                  { target: "postAttack" }
+                ],
+              },
+              postAttack: {
+                always: [
+                  { target: "#gameMachine.GameStart.ProcessEffects", actions: ["queueOnAttackEffect"], cond: "cardHasOnAttack" },
+                ],
+                after: {
+                  1000: { target: "#gameMachine.GameStart.HitRegister"}
+                },
+              }
+            }
           },
           HitRegister: {
             always: [
@@ -145,16 +166,22 @@ export default createMachine(
             ],
           },
           Eliminate: {
-            initial: "InitEliminate",
+            initial: "preEliminate",
             states: {
+              preEliminate: {
+                always: [
+                  { target: "InitEliminate", actions: ["queueOnAllyEliminated"], cond: "deckHasOnAllyEliminated" },
+                  { target: "InitEliminate" }
+                ],
+              },
               InitEliminate: {
                 always: [
-                  { target: "#gameMachine.GameStart.ProcessEffects", actions: ["queueOnEliminated","discardEliminated"], cond: "targetsHaveOnEliminated" },
+                  { target: "#gameMachine.GameStart.ProcessEffects", actions: ["queueOnEliminated","discardEliminated","fixEffectQueue"], cond: "targetsHaveOnEliminated" },
                   { target: "DiscardEliminated" }
                 ],
               },
               DiscardEliminated: {
-                entry: ["discardEliminated"],
+                entry: ["discardEliminated","fixEffectQueue"],
                 always: [
                   { target: "#gameMachine.GameStart.WinCheck", cond: "isGameOver" },
                   { target: "PostEliminate"}
@@ -201,9 +228,9 @@ export default createMachine(
     actions: {
       // action implementations
       initializeMatch: assign(({}) => {
-        const playerDeck = generateDeck(5, assassin, landlord, villager, villager, assassin);
-        const enemyDeck = generateDeck(5, fiend, fiend, devil, imp, imp);
-        
+        const playerDeck = generateDeck(5, [shielder, spearman, landlord, landlord, cavalry]);
+        const enemyDeck = generateDeck(5, [imp, fiend, devil, imp, hellreaper]);
+
         return {
           entities: {
             player: playerDeck,
@@ -217,26 +244,42 @@ export default createMachine(
       // check effects
       checkOnSpawn: assign(({ entities: { player, enemy } , effects: { inQueue, lastEffect }}) => {
         let clone = inQueue;
-        player.filter(card => card.effects.event === "onSpawn").forEach((card, index) => {
-          const queuedEffect = new Effect (
-            card,
-            index,
-            "player",
-            card.effects.requirements
-          )
-          clone.unshift(queuedEffect)
-        })
-        enemy.filter(card => card.effects.event === "onSpawn").forEach((card, index) => {
-          const queuedEffect = new Effect (
-            card,
-            index,
-            "enemy",
-            card.effects.requirements
-          )
-          clone.push(queuedEffect)
+        const playerClone = _.cloneDeep(player);
+        const enemyClone = _.cloneDeep(enemy);
+
+        enemyClone.reverse().forEach((card, index) => {
+          const trueIndex = enemyClone.length - 1 - index;
+          if (card.effects.event === "onSpawn") {
+            const newEffect = new Effect(
+              card,
+              trueIndex,
+              "enemy",
+              card.effects.requirements
+            )
+            clone.unshift(newEffect)
+            card.effects.event = "none"
+          }
+        });
+
+        playerClone.reverse().forEach((card, index) => {
+          const trueIndex = playerClone.length - 1 - index;
+          if (card.effects.event === "onSpawn") {
+            const newEffect = new Effect(
+              card,
+              trueIndex,
+              "player",
+              card.effects.requirements
+            )
+            clone.unshift(newEffect)
+            card.effects.event = "none"
+          }
         })
 
         return {
+          entities: {
+            player: playerClone.reverse(),
+            enemy: enemyClone.reverse()
+          },
           effects: {
             inQueue: clone,
             lastEffect
@@ -266,6 +309,30 @@ export default createMachine(
       }),
 
       //queue effects
+      queueOnAllyAttack: assign(({ effects: { inQueue, lastEffect }, flag: { latestCauses }}) => {
+        let clone = _.cloneDeep(inQueue)
+
+        const deck = _.cloneDeep(latestCauses[0].deck)
+        deck.reverse().forEach((card, index) => {
+          if (card.effects.event === "onAllyAttack") {
+            const trueIndex = deck.length - 1 - index;
+            const newEffect = new Effect(
+              card,
+              trueIndex,
+              latestCauses[0].side,
+              card.effects.requirements
+            )
+            clone.unshift(newEffect)
+          }
+        })
+
+        return {
+          effects: {
+            inQueue: clone,
+            lastEffect
+          }
+        }
+      }),   
       queueOnAttackEffect: assign(({ effects: { inQueue, lastEffect }, flag: { latestCauses }}) => {
         let clone = _.cloneDeep(inQueue)
         const newEffect = new Effect(
@@ -302,8 +369,34 @@ export default createMachine(
           }
         }
       }),
+      queueOnAllyEliminated: assign(({ effects: { inQueue, lastEffect }, flag: { latestTargets }}) => {
+        let clone = _.cloneDeep(inQueue)
+        // queue onAllyEliminated
+        const deck = _.cloneDeep(latestTargets[0].deck)
+        deck.reverse().forEach((card, index) => {
+          if (card.effects.event === "onAllyEliminated") {
+            const trueIndex = deck.length - 1 - index;
+            const newEffect = new Effect(
+              card,
+              trueIndex,
+              latestTargets[0].side,
+              card.effects.requirements
+            )
+            clone.unshift(newEffect)
+          }
+        })
+
+        return {
+          effects: {
+            inQueue: clone,
+            lastEffect
+          }
+        }
+      }),
       queueOnEliminated: assign(({ effects: { inQueue, lastEffect }, flag: { latestTargets }}) => {
         let clone = _.cloneDeep(inQueue)
+
+        // queue onEliminated of targets
         latestTargets.forEach(target => {
           const newEffect = new Effect(
             target.deck[target.index],
@@ -311,8 +404,9 @@ export default createMachine(
             target.side,
             target.deck[target.index].effects.requirements
           )
-          clone.push(newEffect)
+          clone.unshift(newEffect)
         })
+
         return {
           effects: {
             inQueue: clone,
@@ -343,8 +437,9 @@ export default createMachine(
       triggerPlayerEffect: assign(({ entities: { player, enemy }, effects: { inQueue }, flag: { latestCauses, latestTargets } }) => {
         let { ownDeck, oppDeck, newTargets } = processEffect(inQueue[0], player, enemy, "enemy")
         if (inQueue[0].card.effects.event === "onAttack") {
-          newTargets = newTargets.concat(latestTargets)
+          newTargets = _.union(latestTargets, newTargets)
         }
+
         return {
           entities: {
             player: ownDeck,
@@ -358,6 +453,9 @@ export default createMachine(
       }),
       triggerEnemyEffect: assign(({ entities: { player, enemy }, effects: { inQueue }, flag: { latestCauses, latestTargets } }) => {
         let { ownDeck, oppDeck, newTargets } = processEffect(inQueue[0], enemy, player, "player")
+        if (inQueue[0].card.effects.event === "onAttack") {
+          newTargets = _.union(latestTargets, newTargets)
+        }
 
         return {
           entities: {
@@ -427,6 +525,21 @@ export default createMachine(
           },
         };
       }),
+
+      fixEffectQueue: assign(({ effects: { inQueue, lastEffect }, flag: { latestTargets } }) => {
+        inQueue.map(effect => {
+          if (effect.side === latestTargets[0].side) {
+            effect.index -= 1
+          }
+          return effect
+        })
+        return {
+          effects: {
+            inQueue,
+            lastEffect
+          }
+        }
+      }) 
     },
     guards: {
       isPlayersTurn: ({ isPlayersTurn }) => {
@@ -453,8 +566,10 @@ export default createMachine(
       },
 
       isTargetEliminated: ({ flag: { latestTargets } }) => {
-        const card = latestTargets[0].deck[latestTargets[0].index]
-        return card.hitPoints === 0
+        return latestTargets.some(target => { 
+          // console.log(`${target.deck[target.index].name}: ${target.deck[target.index].hitPoints}`)
+          return target.deck[target.index].hitPoints === 0
+        })
       },
 
       isCardInPlayersDeck: ({ effects: { inQueue } }) => {
@@ -464,11 +579,19 @@ export default createMachine(
         return inQueue[0].side === 'enemy'
       },
 
+      deckHasOnAllyAttack: ({ flag: { latestCauses } }) => {
+        const deck = latestCauses[0].deck
+        return deck.some(card => card.effects.event === "onAllyAttack")
+      },
       cardHasOnAttack: ({ entities: { player, enemy }, isPlayersTurn }) => {
         return isPlayersTurn ? enemy[0]?.effects?.event === "onAttack" : player[0]?.effects?.event === "onAttack"
       },
       cardHasOnHit: ({ flag: { latestTargets } }) => {
         return latestTargets.some(obj => obj.deck[obj.index].effects.event === "onHit")
+      },
+      deckHasOnAllyEliminated: ({ flag: { latestTargets } }) => {
+        const deck = latestTargets[0].deck
+        return deck.some(card => card.effects.event === "onAllyEliminated")
       },
       targetsHaveOnEliminated: ({ flag: { latestTargets } }) => {
         return latestTargets.some(obj => obj.deck[obj.index].effects.event === "onEliminated")

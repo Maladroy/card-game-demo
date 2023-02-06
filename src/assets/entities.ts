@@ -1,5 +1,5 @@
 import { IEntity } from "../interface";
-import { doNothing, doubleAttack, extraAttack, increaseHPToTypes, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
+import { attackAndMove, attackOnPosition, doNothing, doubleAttack, executeTarget, extraAttack, increaseAttackToSelf, increaseHPToTypes, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
 export class Card {
@@ -95,7 +95,7 @@ const landlord = new Card(
 const assassin = new Card(
     "005",
     "Assassin",
-    4,
+    3,
     4,
     ["human"],
     {
@@ -128,7 +128,7 @@ const fiend = new Card(
     ["demon"],
     {
         effect: () => doubleAttack(1, 2),
-        requirements: ["opp"],
+        requirements: ["opp","latestTargets"],
         event: "onAttack",
         type: "attack"
     }
@@ -137,7 +137,7 @@ const fiend = new Card(
 const devil = new Card(
     "008",
     "Devil",
-    5,
+    4,
     6,
     ["demon"],
     {
@@ -151,15 +151,103 @@ const devil = new Card(
 const hellhound = new Card(
     "009",
     "Hellhound",
-    8,
+    5,
     10,
     ["demon"],
     {
-        effect: () => doNothing(),
+        effect: () => {},
+        requirements: [],
+        event: "none",
+        type: "none"
+    }
+);
+
+const hellreaper = new Card(
+    "010",
+    "Hell Reaper",
+    4,
+    3,
+    ["demon"],
+    {
+        effect: () => increaseAttackToSelf(2),
         requirements: ["own"],
-        event: "onSpawn",
+        event: "onAllyEliminated",
         type: "buff"
+    }
+);
+
+const swordman = new Card(
+    "011",
+    "Swordman",
+    4,
+    6,
+    ["warrior","human"],
+    {
+        effect: () => {},
+        requirements: [],
+        event: "none",
+        type: "none"
+    }
+);
+
+const archer = new Card(
+    "012",
+    "Archer",
+    2,
+    6,
+    ["warrior","human"],
+    {
+        effect: () => attackOnPosition(2,0,[3,4,5]),
+        requirements: ["opp","latestTargets"],
+        event: "onAllyAttack",
+        type: "attack"
+    }
+);
+
+const cavalry = new Card(
+    "013",
+    "Cavalry",
+    4,
+    8,
+    ["warrior","human"],
+    {
+        effect: () => attackAndMove(0, 0, 0),
+        requirements: ["own","opp","latestTargets"],
+        event: "onAllyEliminated",
+        type: "attack"
+    }
+);
+
+const shielder = new Card(
+    "014",
+    "Shielder",
+    1,
+    12,
+    ["warrior","human"],
+    {
+        effect: () => {},
+        requirements: [],
+        event: "none",
+        type: "movementImmunity"
+    }
+);
+
+const spearman = new Card(
+    "015",
+    "Spearman",
+    4,
+    6,
+    ["warrior","human"],
+    {
+        effect: () => executeTarget(2,0),
+        requirements: ["opp","latestTargets"],
+        event: "onAttack",
+        type: "attack"
     }
 )
 
-export { generateRandomCard, villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound }
+const cardList = [villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
+cavalry, shielder, spearman]
+
+export { generateRandomCard, cardList, villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
+cavalry, shielder, spearman }

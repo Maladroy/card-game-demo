@@ -27,7 +27,7 @@ const setNewIndex = (currentIndex: number, steps: number) => {
 }
 
 const increaseHPToTypes = ( num: number, types: string[] ) => {
-    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+    const ownProcessor = (ownDeck: IEntity[]) => {
         ownDeck.map(card => {
             if ( types.some(type => card.types.includes(type))) {
                 card.hitPoints += num
@@ -95,11 +95,12 @@ const reflectAttacker = ( damageNum: number, debuffChance: number, debuffNum: nu
 const spawnAlly = (card: IEntity, doubleChance: number) => {
     const roll = Math.random()
 
-    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+    const ownProcessor = (ownDeck: IEntity[]) => {
         let deckClone = ownDeck;
         deckClone.unshift(card);
         if (roll < doubleChance) {
-            deckClone.unshift(card);
+            const cardClone = _.cloneDeep(card)
+            deckClone.unshift(cardClone);
         }
         while ( deckClone.length > 5 ) {
             deckClone.shift()
@@ -123,8 +124,9 @@ const swapPositionSelf = (steps: number) => {
 const swapPositionSingleEnemy = (steps: number, enemyIndex: number) => {
     const oppProcessor = (oppDeck: IEntity[]) => {
         let newIndex = setNewIndex(enemyIndex, steps);
-        console.log(newIndex)
-        oppDeck.splice(newIndex, 0, oppDeck.splice(enemyIndex, 1)[0])
+        if (oppDeck[enemyIndex].effects.type != "movementImmunity") {
+            oppDeck.splice(newIndex, 0, oppDeck.splice(enemyIndex, 1)[0])
+        }
         return oppDeck
     }
 
@@ -132,17 +134,27 @@ const swapPositionSingleEnemy = (steps: number, enemyIndex: number) => {
 }
 
 const doubleAttack = (chance: number, damage: number) => {
-    console.log("doubleAttack")
     const roll = Math.random()
-    const oppProcessor = (oppDeck: IEntity[], index: number) => {
+    const oppProcessor = (oppDeck: IEntity[]) => {
         let deckClone = _.cloneDeep(oppDeck)
         if (deckClone[0].hitPoints > 0 && roll < chance) {
             deckClone[0].hitPoints -= damage
+            deckClone[0].hitPoints = Math.max(deckClone[0].hitPoints, 0)
+            console.log(`${deckClone[0].name} was hit for ${damage}`)
         }
         return deckClone
     }
 
-    return [oppProcessor]
+    const targetsProcessor = (oppDeck: IEntity[], targetSide: string): IPosition[] => {
+        let newTarget = new Target(
+            oppDeck,
+            targetSide,
+            0
+        )
+        return [newTarget]
+    }
+
+    return [oppProcessor,targetsProcessor]
 }
 
 const doNothing = () => {
@@ -153,4 +165,82 @@ const doNothing = () => {
     return [ownProcessor]
 }
 
-export { Effect, increaseHPToTypes, extraAttack, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy, doNothing, doubleAttack }
+const increaseAttackToSelf = (num: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck[index].attackPoints += num
+        return ownDeck
+    }
+
+    return [ownProcessor]
+}
+
+const attackOnPosition = (damage: number, target: number, positions: number[]) => {
+    const oppProcessor = (oppDeck: IEntity[], index: number) => {
+        if (oppDeck.length > target + 1 && positions.includes(index)) {
+            oppDeck[target].hitPoints -= damage
+            oppDeck[target].hitPoints = Math.max(oppDeck[target].hitPoints, 0)
+            console.log(`${oppDeck[target].name} was hit for ${damage}`)
+        }
+
+        return oppDeck
+    }
+
+    const targetsProcessor = (oppDeck: IEntity[], targetSide: string): IPosition[] => {
+        let newTarget = new Target(
+            oppDeck,
+            targetSide,
+            target
+        )
+        return [newTarget]
+    }
+
+    return [oppProcessor,targetsProcessor]
+}
+
+const attackAndMove = (damage: number, newIndex: number, targetIndex: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck.splice(newIndex, 0, ownDeck.splice(index, 1)[0])
+        return ownDeck
+    }
+
+    const oppProcessor = (oppDeck: IEntity[], index: number) => {
+        oppDeck[targetIndex].hitPoints -= index + 1 + damage
+        oppDeck[targetIndex].hitPoints = Math.max(oppDeck[targetIndex].hitPoints, 0)
+        console.log(`${oppDeck[targetIndex].name} was hit for ${index - damage}`)
+
+        return oppDeck
+    }
+
+    const targetsProcessor = (oppDeck: IEntity[], targetSide: string): IPosition[] => {
+        let newTarget = new Target(
+            oppDeck,
+            targetSide,
+            targetIndex
+        )
+        return [newTarget]
+    }
+    return [ownProcessor,oppProcessor,targetsProcessor]
+}
+
+const executeTarget = (threshhold: number, targetIndex: number) => {
+    const oppProcessor = (oppDeck: IEntity[]) => {
+        if (oppDeck[targetIndex].hitPoints <= threshhold) {
+            oppDeck[targetIndex].hitPoints = 0
+        }
+        console.log(`${oppDeck[targetIndex].name} was executed`)
+
+        return oppDeck
+    }
+    const targetsProcessor = (oppDeck: IEntity[], targetSide: string): IPosition[] => {
+        let newTarget = new Target(
+            oppDeck,
+            targetSide,
+            targetIndex
+        )
+        return [newTarget]
+    }
+    return [oppProcessor,targetsProcessor]
+}
+
+export { Effect, increaseHPToTypes, extraAttack, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy, doNothing, doubleAttack,
+    increaseAttackToSelf, attackOnPosition, attackAndMove, executeTarget}
