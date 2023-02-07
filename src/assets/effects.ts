@@ -206,7 +206,7 @@ const attackAndMove = (damage: number, newIndex: number, targetIndex: number) =>
     const oppProcessor = (oppDeck: IEntity[], index: number) => {
         oppDeck[targetIndex].hitPoints -= index + 1 + damage
         oppDeck[targetIndex].hitPoints = Math.max(oppDeck[targetIndex].hitPoints, 0)
-        console.log(`${oppDeck[targetIndex].name} was hit for ${index - damage}`)
+        console.log(`${oppDeck[targetIndex].name} was hit for ${index + 1 + damage}`)
 
         return oppDeck
     }

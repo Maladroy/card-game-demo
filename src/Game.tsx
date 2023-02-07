@@ -5,13 +5,24 @@ import _ from "lodash";
 import { IEntity } from "./interface";
 import PlayerDeck from "./components/PlayerDeck";
 import EnemyDeck from "./components/EnemyDeck";
-import { cardList } from "./assets/entities";
+import { Card, cardList } from "./assets/entities";
 import InventoryCard from "./components/InventoryCard";
+import UsersDeck from "./components/UsersDeck";
+
 
 function Game() {
   const [state, send] = useMachine(gameMachine);
   const [playerEntityList, setPlayerEntityList] = useState<IEntity[]>([]);
   const [enemyEntityList, setEnemyEntityList] = useState<IEntity[]>([]);
+  const [usersCardList, setUsersCardList] = useState<Card[] | any[]>([{},{},{},{},{}])
+
+  const equipCard = (num: number, card: Card) => {
+    console.log(num, card.name)
+    setUsersCardList(prevList => {
+      prevList[num-1] = card
+      return [...prevList]
+    })
+  }
 
   // render after every state changes
   useEffect(() => {
@@ -24,30 +35,35 @@ function Game() {
   return (
     <div className="">
       <div className="mx-auto mt-16 w-full xl:w-3/4 mb-8">
-        <div className="grid gap-4 xl:gap-[10rem] grid-cols-2 mb-12">
-          <PlayerDeck key="Player" playerEntityList={playerEntityList} />
-          <EnemyDeck key="Enemy" enemyEntityList={enemyEntityList} />
-        </div>
-        <div className="flex gap-6 justify-center">
+        {state.value !== "Idle" && 
+            <div className="grid gap-4 xl:gap-[10rem] grid-cols-2 mb-12">
+              <PlayerDeck key="Player" playerEntityList={playerEntityList} />
+              <EnemyDeck key="Enemy" enemyEntityList={enemyEntityList} />
+            </div>
+        }
+        <div className="flex gap-6 justify-center mb-8">
           <button
             className="bg-yellow-500 block px-10 py-4 mt-10"
             onClick={() => {
               send("INPUT");
             }}
           >
-            {state.value === "Init" ? "Start" : "Restart"}
+            {state.value === "Idle" ? "Start" : "Restart"}
           </button>
         </div>
-      </div>
-      <div className="bg-neutral-700 w-full h-[24rem] p-6 flex gap-8 flex-wrap">
-        {cardList.map(card => 
-          <InventoryCard
-            key={card.cardId}
-            name={card.name}
-            attackPoints={card.attackPoints}
-            hitPoints={card.hitPoints}
-          />  
-        )}
+        <div className="bg-neutral-700 w-full p-6 flex gap-8 flex-wrap mt-auto">
+          {cardList.map(card => 
+            <InventoryCard
+              key={card.cardId}
+              card={card}
+              name={card.name}
+              attackPoints={card.attackPoints}
+              hitPoints={card.hitPoints}
+              equipCard={equipCard}
+            />  
+          )}
+        </div>
+        <UsersDeck key="UsersDeck" UsersCardList={usersCardList}/>
       </div>
     </div>
   );

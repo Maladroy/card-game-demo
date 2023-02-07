@@ -52,7 +52,7 @@ export default createMachine(
     predictableActionArguments: true,
     preserveActionOrder: true,
     id: "gameMachine",
-    initial: "Init",
+    initial: "Idle",
     context: {
       entities: { player: [], enemy: [] }, // context must not be mutated externally but with assign()
       activeCards: [],
@@ -67,13 +67,18 @@ export default createMachine(
       }
     },
     states: {
-      Init: {
-        entry: ["initializeMatch"],
+      Idle: {
         on: {
           INPUT: {
-            target: "GameStart",
+            target: "Init",
           },
         },
+      },
+      Init: {
+        entry: ["initializeMatch"],
+        after: {
+          1000: { target: "GameStart" }
+        }
       },
       GameStart: {
         initial: "SpawnCards",
@@ -215,7 +220,7 @@ export default createMachine(
       },
       GameEnd: {
         after: {
-          1000: { target: "Init"}
+          1000: { target: "Idle"}
         }
       },
     },
@@ -230,7 +235,7 @@ export default createMachine(
       initializeMatch: assign(({}) => {
         const playerDeck = generateDeck(5, [shielder, spearman, landlord, landlord, cavalry]);
         const enemyDeck = generateDeck(5, [imp, fiend, devil, imp, hellreaper]);
-
+        console.log(123)
         return {
           entities: {
             player: playerDeck,
