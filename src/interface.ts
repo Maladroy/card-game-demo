@@ -1,3 +1,5 @@
+import { Card } from "./assets/entities";
+
 export interface IEntity {
     cardId: string;
     name: string;
@@ -12,7 +14,7 @@ export interface IContext {
         player: IEntity[],
         enemy: IEntity[],
     },
-    activeCards: IEntity[],
+    // usersDeck: any[],
     effects: {
         inQueue: IEffect[],
         lastEffect: IEffect | any

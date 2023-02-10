@@ -1,5 +1,5 @@
 import { IEntity } from "../interface";
-import { attackAndMove, attackOnPosition, doNothing, doubleAttack, executeTarget, extraAttack, increaseAttackToSelf, increaseHPToTypes, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
+import { attackAndMove, attackOnPosition, buffTypeBasedOnEffectType, doNothing, doubleAttack, executeTarget, extraAttack, increaseAttackAndHPToAll, increaseAttackToSelf, increaseAttackToSelfPerType, increaseAttackToTypes, increaseHPToAllAllies, increaseHPToAllies, increaseHPToSelf, increaseHPToTypes, moveToSpot, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
 export class Card {
@@ -64,11 +64,11 @@ const hunter = new Card(
     }
 );
 
-const largeTree = new Card(
+const thornTree = new Card(
     "003",
-    "Large Tree",
+    "Thorn Tree",
     0,
-    11,
+    7,
     ["nature"],
     {
         effect: () => reflectAttacker(1, 0.2, 1),
@@ -85,7 +85,7 @@ const landlord = new Card(
     4,
     ["human"],
     {
-        effect: () => spawnAlly(villager, 0.35),
+        effect: () => spawnAlly(villager, 1, 0.35),
         requirements: ["own"],
         event: "onEliminated",
         type: "spawn"
@@ -114,7 +114,7 @@ const imp = new Card(
     ["demon"],
     {
         effect: () => swapPositionSingleEnemy(2, 0),
-        requirements: ["opp"],
+        requirements: ["opp", "latestTargets"],
         event: "onHit",
         type: "swap"
     }
@@ -141,7 +141,7 @@ const devil = new Card(
     6,
     ["demon"],
     {
-        effect: () => spawnAlly(imp, 0),
+        effect: () => spawnAlly(imp, 1, 0),
         requirements: ["own"],
         event: "onEliminating",
         type: "spawn"
@@ -244,10 +244,208 @@ const spearman = new Card(
         event: "onAttack",
         type: "attack"
     }
+);
+
+const bard = new Card(
+    "016",
+    "Bard",
+    1,
+    4,
+    ["human"],
+    {
+        effect: () => increaseAttackAndHPToAll(1, 2, 2, 1),
+        requirements: ["own"],
+        event: "onSpawn",
+        type: "buff"
+    }
+);
+
+const tiger = new Card(
+    "017",
+    "Tiger",
+    3,
+    5,
+    ["animal"],
+    {
+        effect: () => {},
+        requirements: [],
+        event: "none",
+        type: "none"
+    }
+);
+
+const youngDruid = new Card(
+    "018",
+    "Young Druid",
+    1,
+    4,
+    ["nature"],
+    {
+        effect: () => spawnAlly(tiger, 1, 0),
+        requirements: ["own"],
+        event: "onEliminated",
+        type: "spawn"
+    }
+);
+
+const lion = new Card(
+    "019",
+    "Lion",
+    3,
+    5,
+    ["animal"],
+    {
+        effect: () => increaseAttackToTypes(1, ["animal"]),
+        requirements: ["own"],
+        event: "onEliminated",
+        type: "buff"
+    }
+);
+
+const hippo = new Card(
+    "020",
+    "Hippo",
+    0,
+    9,
+    ["animal"],
+    {
+        effect: () => extraAttack(3,0),
+        requirements: ["opp","latestTargets"],
+        event: "onHit",
+        type: "attack"
+    }
+);
+
+const herbalist = new Card(
+    "021",
+    "Herbalist",
+    1,
+    3,
+    ["human"],
+    {
+        effect: () => increaseHPToAllies(2,[-1],["nature"]),
+        requirements: ["own"],
+        event: "onSpawn",
+        type: "buff"
+    }
+);
+
+const treant = new Card(
+    "022",
+    "Treant",
+    2,
+    9,
+    ["nature"],
+    {
+        effect: () => spawnAlly(youngTreant, 1, 0),
+        requirements: ["own"],
+        event: "onEliminated",
+        type: "spawn"
+    }
+);
+
+const youngTreant = new Card(
+    "023",
+    "Young Treant",
+    2,
+    4,
+    ["nature"],
+    {
+        effect: () => increaseHPToSelf(1),
+        requirements: ["own"],
+        event: "onHit",
+        type: "buff"
+    }
+);
+
+const fairy = new Card(
+    "024",
+    "Fairy",
+    1,
+    2,
+    ["mystic"],
+    {
+        effect: () => increaseHPToAllAllies(3),
+        requirements: ["own"],
+        event: "onSpawn",
+        type: "buff"
+    }
+);
+
+const woodElf = new Card(
+    "025",
+    "Wood Elf",
+    2,
+    6,
+    ["elf"],
+    {
+        effect: () => increaseAttackToSelfPerType(2, ["nature"]),
+        requirements: ["own"],
+        event: "onAttack",
+        type: "buff"
+    }
+);
+
+const heartOfTheForest = new Card(
+    "026",
+    "<Heart Of The Forest>",
+    0,
+    12,
+    ["nature"],
+    {
+        effect: () => increaseHPToTypes(1, ["nature"]),
+        requirements: ["own"],
+        event: "onAttack",
+        type: "buff"
+    }
+);
+
+const treantWaker = new Card(
+    "027",
+    "Treant Waker",
+    1,
+    6,
+    ["misc"],
+    {
+        effect: () => buffTypeBasedOnEffectType(4,0,0,6,["nature"]),
+        requirements: ["own"],
+        event: "onSpawn",
+        type: "buff"
+    }
+);
+
+const prototypeI = new Card(
+    "028",
+    "Prototype I",
+    1,
+    12,
+    ["machine"],
+    {
+        effect: () => moveToSpot(0),
+        requirements: ["own"],
+        event: "onAllyHit",
+        type: "swap"
+    }
+);
+
+const prototypeII = new Card(
+    "029",
+    "Prototype II",
+    1,
+    14,
+    ["machine"],
+    {
+        effect: () => swapPositionSingleEnemy(1, 0),
+        requirements: ["opp","latestTargets"],
+        event: "onAttack",
+        type: "swap"
+    }
 )
 
-const cardList = [villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
-cavalry, shielder, spearman]
 
-export { generateRandomCard, cardList, villager, hunter, largeTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
-cavalry, shielder, spearman }
+const cardList = [villager, hunter, thornTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
+cavalry, shielder, spearman, bard, tiger, youngDruid, lion, hippo, herbalist, treant, fairy, woodElf]
+
+export { generateRandomCard, cardList, villager, hunter, thornTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
+cavalry, shielder, spearman, bard, youngDruid, lion, hippo, herbalist, treant, fairy, woodElf, heartOfTheForest, treantWaker, prototypeI,
+prototypeII }

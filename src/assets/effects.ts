@@ -16,14 +16,27 @@ class Effect {
     }
 }
 
-const setNewIndex = (currentIndex: number, steps: number) => {
+const setNewIndex = (currentIndex: number, steps: number, length = 5) => {
     currentIndex += steps
     if (currentIndex < 0) {
         currentIndex = 0
-    } else if (currentIndex > 5) {
-        currentIndex = 5
+    } else if (currentIndex > length) {
+        currentIndex = length
     }
     return currentIndex
+}
+
+const increaseAttackToTypes = ( num: number, types: string[] ) => {
+    const ownProcessor = (ownDeck: IEntity[]) => {
+        ownDeck.map(card => {
+            if ( types.some(type => card.types.includes(type))) {
+                card.attackPoints += num
+            }
+        })
+        return ownDeck
+    }
+
+    return [ownProcessor]
 }
 
 const increaseHPToTypes = ( num: number, types: string[] ) => {
@@ -92,13 +105,15 @@ const reflectAttacker = ( damageNum: number, debuffChance: number, debuffNum: nu
     return [oppProcessor, targetsProcessor]
 }
 
-const spawnAlly = (card: IEntity, doubleChance: number) => {
+const spawnAlly = (card: IEntity, chance: number, doubleChance: number) => {
+    console.log("spawnAlly")
     const roll = Math.random()
-
     const ownProcessor = (ownDeck: IEntity[]) => {
         let deckClone = ownDeck;
-        deckClone.unshift(card);
-        if (roll < doubleChance) {
+        if (roll < chance && chance !== 0) {
+            deckClone.unshift(card);
+        }
+        if (roll < doubleChance && doubleChance !== 0) {
             const cardClone = _.cloneDeep(card)
             deckClone.unshift(cardClone);
         }
@@ -129,8 +144,13 @@ const swapPositionSingleEnemy = (steps: number, enemyIndex: number) => {
         }
         return oppDeck
     }
-
-    return [oppProcessor]
+    const targetsProcessor = (oppDeck: IEntity[], targetSide: string, latestTargets: IPosition[]) => {
+        latestTargets.filter(target => target.side === targetSide && target.index === enemyIndex).map(target => {
+            target.index += steps
+        })
+        return latestTargets
+    }
+    return [oppProcessor, targetsProcessor]
 }
 
 const doubleAttack = (chance: number, damage: number) => {
@@ -175,6 +195,7 @@ const increaseAttackToSelf = (num: number) => {
 }
 
 const attackOnPosition = (damage: number, target: number, positions: number[]) => {
+    // console.log("attackOnPosition")
     const oppProcessor = (oppDeck: IEntity[], index: number) => {
         if (oppDeck.length > target + 1 && positions.includes(index)) {
             oppDeck[target].hitPoints -= damage
@@ -242,5 +263,89 @@ const executeTarget = (threshhold: number, targetIndex: number) => {
     return [oppProcessor,targetsProcessor]
 }
 
+const increaseAttackAndHPToAll = (attackBuffOn: number, attackBuffNum: number, HPBuffOn: number, HPBuffNum: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck[setNewIndex(index,attackBuffOn, ownDeck.length)].attackPoints += attackBuffNum;
+        ownDeck[setNewIndex(index,-attackBuffOn, ownDeck.length)].attackPoints += attackBuffNum;
+        ownDeck[setNewIndex(index,HPBuffOn, ownDeck.length)].hitPoints += HPBuffNum;
+        ownDeck[setNewIndex(index,-HPBuffNum, ownDeck.length)].hitPoints += HPBuffNum;
+        return ownDeck
+    }
+
+    return [ownProcessor]
+}
+
+const increaseHPToSelf = (HPBuffNum: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck[index].hitPoints += HPBuffNum
+        return ownDeck
+    }
+    return [ownProcessor]
+}
+
+const increaseHPToAllies = (HPBuffNum: number, targets: number[], types: string[]) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        const finalHPBuff = ownDeck.filter(card => {
+            return types.some(type => card.types.includes(type))
+        }).length * HPBuffNum
+
+        targets.forEach(num => {
+            ownDeck[setNewIndex(index,num)].hitPoints += finalHPBuff
+        })
+        return ownDeck
+    }
+
+    return [ownProcessor]
+}
+
+const increaseHPToAllAllies = (HPBuffNum: number) => {
+    const ownProcessor = (ownDeck: IEntity[]) => {
+        ownDeck.map(card => card.hitPoints += HPBuffNum)
+        return ownDeck
+    }
+
+    return [ownProcessor]
+}
+
+const increaseAttackToSelfPerType = (attackBuffNum: number, types: string[]) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        const finalAttackBuff = ownDeck.filter(card => {
+            return types.some(type => card.types.includes(type))
+        }).length * attackBuffNum
+
+        ownDeck[index].attackPoints += finalAttackBuff
+        return ownDeck
+    }
+
+    return [ownProcessor]
+};
+
+const buffTypeBasedOnEffectType = (attackBuffToAttack: number, HPBuffToAttack: number, 
+    attackBuffToOthers: number, HPBUffToOthers: number, types: string[]) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck.filter(card => {return types.some(type => card.types.includes(type))}).forEach(card => {
+            if (card.effects.type === "attack") {
+                card.attackPoints += attackBuffToAttack
+                card.hitPoints += HPBuffToAttack
+            } else {
+                card.attackPoints += attackBuffToOthers
+                card.hitPoints += HPBUffToOthers
+            }
+        })    
+        return ownDeck
+    }
+    return [ownProcessor]
+}
+
+const moveToSpot = (newIndex: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        ownDeck.splice(newIndex, 0, ownDeck.splice(index, 1)[0])
+        return ownDeck    
+    }
+
+    return [ownProcessor]
+}
+
 export { Effect, increaseHPToTypes, extraAttack, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy, doNothing, doubleAttack,
-    increaseAttackToSelf, attackOnPosition, attackAndMove, executeTarget}
+    increaseAttackToSelf, attackOnPosition, attackAndMove, executeTarget, increaseAttackAndHPToAll, increaseAttackToTypes, increaseHPToAllies,
+    increaseHPToSelf, increaseAttackToSelfPerType, increaseHPToAllAllies, buffTypeBasedOnEffectType, moveToSpot }
