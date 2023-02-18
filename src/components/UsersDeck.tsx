@@ -1,17 +1,23 @@
 import { IEntity } from "../interface";
+import EmptySlot from "./EmptySlot";
 import EntityCard from "./EntityCard";
 
 const UsersDeck = ({ UsersCardList }: { UsersCardList: IEntity[]}) => {
     return (
-        <div className="bg-neutral-500 w-full px-16 py-8 flex gap-8 justify-center flex-row-reverse">
-          {UsersCardList.map((card, index) => 
-            <EntityCard
-              key={index}
-              name={card.name}
-              attackPoints={card.attackPoints}
-              hitPoints={card.hitPoints}
-              type="own"
-            />  
+        <div className="w-full flex gap-8 flex-wrap justify-center flex-row-reverse">
+          {UsersCardList.map((card, index) => {
+              if (card.name) {
+                return <EntityCard
+                  key={index}
+                  name={card.name}
+                  attackPoints={card.attackPoints}
+                  hitPoints={card.hitPoints}
+                  type="none"
+                />
+              }
+              return <EmptySlot key={index}/>
+            }
+
           )}
         </div>
     )

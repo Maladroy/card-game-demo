@@ -26,28 +26,29 @@ const InventoryCard = ({ card, name, attackPoints, hitPoints, equipCard }
     clickDetector(popupRef, turnOffPopup)
 
     return (
-        <div className="bg-yellow-500 px-3 py-4 max-h-[12rem] relative">
-            <div className="h-6"></div>
-            <h1>{name}</h1>
-            <div className="">
-                <h1>ATK: {attackPoints}</h1>
-                <h1>HP: {hitPoints}</h1>
+        <div className="bg-yellow-regular relative twitch-hover h-fit">
+            <div className="bg-neutral-800 w-[117px] h-[156px] relative flex flex-col items-center cursor-pointer transition-all z-10 card" 
+                onClick={() => setPopUpVisible(prevState => !prevState)} ref={popupRef}>
+                <div className="h-6"></div>
+                <h1>{name}</h1>
+                <div className="">
+                    <h1>ATK: {attackPoints}</h1>
+                    <h1>HP: {hitPoints}</h1>
+                </div>
             </div>
-            <button className="bg-neutral-800 block px-4 py-2 mt-10" onClick={() => setPopUpVisible(prevState => !prevState)}>
-                Equip
-            </button>
-            <div className={`${popUpVisible ? "flex" : "hidden"} bg-neutral-800 
-                absolute bottom-0 right-1/2 translate-y-[100%] translate-x-1/2 z-10 gap-2 p-4 border-2 border-white`}
-                    ref={popupRef}>
-                {i.map(num => 
-                    <NumberedEquipButton
-                        key={num}
-                        num={num}
-                        func={()=> equipCard(num, card)}
-                    />
-                )}
+            <div className={`${popUpVisible ? "flex" : "hidden"} bg-neutral-800 transition-all
+                    absolute bottom-1/2 right-1/2 translate-y-[100%] translate-x-1/2 z-20 gap-2 p-4 border-2 border-white`}
+                        ref={popupRef}>
+                    {i.map(num => 
+                        <NumberedEquipButton
+                            key={num}
+                            num={num}
+                            func={()=> equipCard(num, card)}
+                        />
+                    )}
             </div>
         </div>
+
     )
 }
 

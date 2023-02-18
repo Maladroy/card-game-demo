@@ -106,7 +106,6 @@ const reflectAttacker = ( damageNum: number, debuffChance: number, debuffNum: nu
 }
 
 const spawnAlly = (card: IEntity, chance: number, doubleChance: number) => {
-    console.log("spawnAlly")
     const roll = Math.random()
     const ownProcessor = (ownDeck: IEntity[]) => {
         let deckClone = ownDeck;
@@ -117,6 +116,7 @@ const spawnAlly = (card: IEntity, chance: number, doubleChance: number) => {
             const cardClone = _.cloneDeep(card)
             deckClone.unshift(cardClone);
         }
+
         while ( deckClone.length > 5 ) {
             deckClone.shift()
         }
@@ -283,7 +283,22 @@ const increaseHPToSelf = (HPBuffNum: number) => {
     return [ownProcessor]
 }
 
-const increaseHPToAllies = (HPBuffNum: number, targets: number[], types: string[]) => {
+const increaseHPToLowestAlly = (HPBuffNum: number) => {
+    const ownProcessor = (ownDeck: IEntity[], index: number) => {
+        const minHPCard = ownDeck.filter((card, i) => i !== index ).reduce(function(prev, curr) {
+            return prev.hitPoints < curr.hitPoints ? prev : curr;
+        });
+
+        minHPCard.hitPoints += HPBuffNum
+        console.log(`${minHPCard.name} gained ${HPBuffNum} health`)
+        
+        return ownDeck
+    }
+
+    return [ownProcessor]
+}
+
+const increaseHPToAlliesPerType = (HPBuffNum: number, targets: number[], types: string[]) => {
     const ownProcessor = (ownDeck: IEntity[], index: number) => {
         const finalHPBuff = ownDeck.filter(card => {
             return types.some(type => card.types.includes(type))
@@ -347,5 +362,5 @@ const moveToSpot = (newIndex: number) => {
 }
 
 export { Effect, increaseHPToTypes, extraAttack, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy, doNothing, doubleAttack,
-    increaseAttackToSelf, attackOnPosition, attackAndMove, executeTarget, increaseAttackAndHPToAll, increaseAttackToTypes, increaseHPToAllies,
-    increaseHPToSelf, increaseAttackToSelfPerType, increaseHPToAllAllies, buffTypeBasedOnEffectType, moveToSpot }
+    increaseAttackToSelf, attackOnPosition, attackAndMove, executeTarget, increaseAttackAndHPToAll, increaseAttackToTypes, increaseHPToAlliesPerType,
+    increaseHPToSelf, increaseAttackToSelfPerType, increaseHPToAllAllies, buffTypeBasedOnEffectType, moveToSpot, increaseHPToLowestAlly }

@@ -1,5 +1,5 @@
 import { createMachine, assign } from "xstate";
-import { generateRandomCard, villager, hunter, thornTree, landlord, assassin, fiend, devil, imp, hellhound, hellreaper, swordman, archer, cavalry, shielder, spearman, bard, hippo, youngDruid, lion, treant, herbalist, fairy, woodElf, heartOfTheForest, treantWaker, prototypeI, prototypeII } from "./assets/entities";
+import { generateRandomCard, villager, hunter, thornTree, landlord, assassin, fiend, devil, imp, hellhound, hellreaper, swordman, archer, cavalry, shielder, spearman, bard, hippo, youngDruid, lion, treant, herbalist, fairy, woodElf, heartOfTheForest, treantWaker, prototypeI, prototypeII, prototypeIII, prototypeV } from "./assets/entities";
 import { IEntity, IContext, IEffect, IPosition } from "./interface";
 import Target from "./assets/targets";
 import { doNothing, Effect } from "./assets/effects";
@@ -61,7 +61,6 @@ export default createMachine(
     initial: "Idle",
     context: {
       entities: { player: [], enemy: [] }, // context must not be mutated externally but with assign()
-      // usersDeck: [{},{},{},{},{}],
       effects: {
         inQueue: [],
         lastEffect: []
@@ -254,8 +253,9 @@ export default createMachine(
       // action implementations
       initializeMatch: assign(({}) => {
         // [hellhound, devil, devil, fiend, hellreaper]
-        const playerDeck = generateDeck(5, [prototypeII, bard, bard, prototypeI, archer]);
-        const enemyDeck = generateDeck(5, [heartOfTheForest, thornTree, treant, treant, treantWaker]);
+        // [heartOfTheForest, thornTree, treant, treant, treantWaker]
+        const playerDeck = generateDeck(5, [prototypeV, prototypeI, prototypeI, prototypeI, prototypeI]);
+        const enemyDeck = generateDeck(5, [hellhound, devil, devil, fiend, hellreaper]);
         return {
           entities: {
             player: playerDeck,

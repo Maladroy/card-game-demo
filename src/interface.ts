@@ -14,7 +14,6 @@ export interface IContext {
         player: IEntity[],
         enemy: IEntity[],
     },
-    // usersDeck: any[],
     effects: {
         inQueue: IEffect[],
         lastEffect: IEffect | any

@@ -8,13 +8,17 @@
   line-height: 24px;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+.twitch-hover {
+  @apply before:block before:absolute before:w-2 before:h-2 before:transition-all before:bg-yellow-regular before:top-0 before:left-0
+  before:origin-top-left before:rotate-[-45deg] before:scale-0
+  after:block after:absolute after:w-2 after:h-2 after:transition-all after:bg-yellow-regular after:bottom-0 after:right-0
+  after:origin-bottom-right after:rotate-45 after:scale-0
+  [&:hover>.card]:translate-x-[6px] [&:hover>.card]:translate-y-[-6px] [&:hover:before]:scale-100 [&:hover:after]:scale-100
 }

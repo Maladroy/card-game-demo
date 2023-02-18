@@ -1,5 +1,5 @@
 import { IEntity } from "../interface";
-import { attackAndMove, attackOnPosition, buffTypeBasedOnEffectType, doNothing, doubleAttack, executeTarget, extraAttack, increaseAttackAndHPToAll, increaseAttackToSelf, increaseAttackToSelfPerType, increaseAttackToTypes, increaseHPToAllAllies, increaseHPToAllies, increaseHPToSelf, increaseHPToTypes, moveToSpot, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
+import { attackAndMove, attackOnPosition, buffTypeBasedOnEffectType, doubleAttack, executeTarget, extraAttack, increaseAttackAndHPToAll, increaseAttackToSelf, increaseAttackToSelfPerType, increaseAttackToTypes, increaseHPToAllAllies, increaseHPToAlliesPerType, increaseHPToLowestAlly, increaseHPToSelf, increaseHPToTypes, moveToSpot, reflectAttacker, spawnAlly, swapPositionSelf, swapPositionSingleEnemy } from "./effects";
 
 const names = ["Aaron", "Abdallah", "Bob", "Steve", "John", "Ethan", "Hashem", "Montgomery", "Roman", "Mike Hunt", "Chris Toris"]
 export class Card {
@@ -71,7 +71,7 @@ const thornTree = new Card(
     7,
     ["nature"],
     {
-        effect: () => reflectAttacker(1, 0.2, 1),
+        effect: () => reflectAttacker(1, 0, 0),
         requirements: ["opp","latestTargets"],
         event: "onHit",
         type: "attack"
@@ -323,7 +323,7 @@ const herbalist = new Card(
     3,
     ["human"],
     {
-        effect: () => increaseHPToAllies(2,[-1],["nature"]),
+        effect: () => increaseHPToAlliesPerType(2,[-1],["nature"]),
         requirements: ["own"],
         event: "onSpawn",
         type: "buff"
@@ -418,7 +418,7 @@ const prototypeI = new Card(
     "028",
     "Prototype I",
     1,
-    12,
+    10,
     ["machine"],
     {
         effect: () => moveToSpot(0),
@@ -440,7 +440,50 @@ const prototypeII = new Card(
         event: "onAttack",
         type: "swap"
     }
-)
+);
+
+const prototypeIII = new Card(
+    "030",
+    "Prototype III",
+    1,
+    2,
+    ["machine"],
+    {
+        effect: () => spawnAlly(prototypeIV, 1, 1),
+        requirements: ["own"],
+        event: "onEliminated",
+        type: "spawn"
+    }
+);
+
+const prototypeIV = new Card(
+    "031",
+    "Prototype IV",
+    0,
+    5,
+    ["machine"],
+    {
+        effect: () => increaseHPToLowestAlly(3),
+        requirements: ["own"],
+        event: "onAttack",
+        type: "buff"
+    }
+);
+
+const prototypeV = new Card(
+    "032",
+    "Prototype V",
+    1,
+    7,
+    ["machine"],
+    {
+        effect: () => increaseAttackToTypes(3, ["machine"]),
+        requirements: ["own"],
+        event: "onHit",
+        type: "buff"
+    }
+);
+
 
 
 const cardList = [villager, hunter, thornTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
@@ -448,4 +491,4 @@ cavalry, shielder, spearman, bard, tiger, youngDruid, lion, hippo, herbalist, tr
 
 export { generateRandomCard, cardList, villager, hunter, thornTree, landlord, assassin, imp, fiend, devil, hellhound, hellreaper, swordman, archer,
 cavalry, shielder, spearman, bard, youngDruid, lion, hippo, herbalist, treant, fairy, woodElf, heartOfTheForest, treantWaker, prototypeI,
-prototypeII }
+prototypeII, prototypeIII, prototypeV }
